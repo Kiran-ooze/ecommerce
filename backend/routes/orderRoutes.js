@@ -4,6 +4,7 @@ const router = express.Router();
 
 const {
   createOrder,
+  placeCODOrder,
   getMyOrders,
   getAllOrders,
 } = require("../controllers/orderController");
@@ -13,6 +14,7 @@ const { protect, admin } = require("../middleware/authMiddleware");
 // User Routes
 
 router.post("/", protect, createOrder);
+router.post("/cod", protect, placeCODOrder);
 
 router.get("/", protect, getMyOrders);
 

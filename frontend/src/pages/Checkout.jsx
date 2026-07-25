@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CreditCard, MapPin, ArrowLeft } from "lucide-react";
+import { placeCODOrder } from "../api/orderApi";
 import {
   createPaymentOrder,
   verifyPayment,
@@ -11,6 +12,7 @@ function Checkout() {
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("razorpay");
 
   const [formData, setFormData] = useState({
     shippingAddress: "",
@@ -23,70 +25,77 @@ function Checkout() {
     });
   };
 
-const handlePayment = async () => {
-  if (!formData.shippingAddress.trim()) {
-    alert("Please enter your shipping address.");
-    return;
-  }
+  const handlePayment = async () => {
+    if (!formData.shippingAddress.trim()) {
+      alert("Please enter your shipping address.");
+      return;
+    }
 
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    // Get Razorpay Public Key
-    const { key } = await getRazorpayKey();
+      // Cash on Delivery
+      if (paymentMethod === "cod") {
+        await placeCODOrder(formData.shippingAddress);
+        navigate("/payment-success");
+        return;
+      }
 
-    // Create Order
-    const data = await createPaymentOrder({
-      shippingAddress: formData.shippingAddress,
-    });
+      // Get Razorpay Public Key
+      const { key } = await getRazorpayKey();
 
-    const options = {
-      key,
-      amount: data.razorpayOrder.amount,
-      currency: data.razorpayOrder.currency,
-      name: "Your Store",
-      description: "Order Payment",
-      order_id: data.razorpayOrder.id,
+      // Create Order
+      const data = await createPaymentOrder({
+        shippingAddress: formData.shippingAddress,
+      });
 
-      handler: async function (response) {
-        try {
-          await verifyPayment({
-            razorpay_order_id: response.razorpay_order_id,
-            razorpay_payment_id: response.razorpay_payment_id,
-            razorpay_signature: response.razorpay_signature,
-            orderId: data.orderId,
-          });
+      const options = {
+        key,
+        amount: data.razorpayOrder.amount,
+        currency: data.razorpayOrder.currency,
+        name: "Your Store",
+        description: "Order Payment",
+        order_id: data.razorpayOrder.id,
 
-          navigate("/payment-success");
-        } catch (error) {
-          console.error(error);
-          navigate("/payment-failed");
-        }
-      },
+        handler: async function (response) {
+          try {
+            await verifyPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              orderId: data.orderId,
+            });
 
-      prefill: {
-        name: "",
-        email: "",
-      },
+            navigate("/payment-success");
+          } catch (error) {
+            console.error(error);
+            navigate("/payment-failed");
+          }
+        },
 
-      theme: {
-        color: "#18181b",
-      },
-    };
+        prefill: {
+          name: "",
+          email: "",
+        },
 
-    const razorpay = new window.Razorpay(options);
+        theme: {
+          color: "#18181b",
+        },
+      };
 
-    razorpay.on("payment.failed", function () {
-      navigate("/payment-failed");
-    });
+      const razorpay = new window.Razorpay(options);
 
-    razorpay.open();
-  } catch (error) {
-    alert(error.response?.data?.message || "Unable to initiate payment.");
-  } finally {
-    setLoading(false);
-  }
-};
+      razorpay.on("payment.failed", function () {
+        navigate("/payment-failed");
+      });
+
+      razorpay.open();
+    } catch (error) {
+      alert(error.response?.data?.message || "Unable to initiate payment.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-10 space-y-8">
@@ -142,12 +151,40 @@ const handlePayment = async () => {
           <h2 className="font-bold text-lg">Payment</h2>
         </div>
 
-        <div className="border rounded-xl p-4 bg-zinc-50">
-          <p className="font-semibold">Razorpay</p>
+        <div className="space-y-3">
+          <label className="flex items-center justify-between border rounded-xl p-4 cursor-pointer hover:border-zinc-400">
+            <div>
+              <p className="font-semibold">Razorpay</p>
+              <p className="text-sm text-zinc-500">
+                UPI, Cards, Wallets & Net Banking
+              </p>
+            </div>
 
-          <p className="text-sm text-zinc-500 mt-1">
-            Pay securely using UPI, Cards, Net Banking, or Wallets.
-          </p>
+            <input
+              type="radio"
+              name="paymentMethod"
+              value="razorpay"
+              checked={paymentMethod === "razorpay"}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+            />
+          </label>
+
+          <label className="flex items-center justify-between border rounded-xl p-4 cursor-pointer hover:border-zinc-400">
+            <div>
+              <p className="font-semibold">Cash on Delivery</p>
+              <p className="text-sm text-zinc-500">
+                Pay when your order arrives.
+              </p>
+            </div>
+
+            <input
+              type="radio"
+              name="paymentMethod"
+              value="cod"
+              checked={paymentMethod === "cod"}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+            />
+          </label>
         </div>
 
         <button
