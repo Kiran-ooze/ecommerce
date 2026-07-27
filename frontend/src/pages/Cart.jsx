@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, AlertCircle, ShieldCheck } from "lucide-react";
 import API from "../api/axios";
+import toast from "react-hot-toast";
 
 function Cart() {
   const [cart, setCart] = useState(null);
@@ -25,7 +26,7 @@ function Cart() {
     fetchCart();
   }, []);
 
-  const updateQuantity = async (productId, quantity) => {
+const updateQuantity = async (productId, quantity) => {
   if (quantity < 1) return;
 
   try {
@@ -35,8 +36,9 @@ function Cart() {
     });
 
     fetchCart();
+    toast.success("Cart updated");
   } catch (err) {
-    alert("Failed to update quantity");
+    toast.error("Failed to update quantity");
   }
 };
 
@@ -45,7 +47,7 @@ function Cart() {
       await API.delete(`/cart/${productId}`);
       fetchCart();
     } catch (err) {
-      alert("Failed to remove item");
+      toast.error("Failed to remove item");
     }
   };
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, ShoppingBag, Plus, Minus, ShieldCheck, Truck, AlertCircle } from "lucide-react";
+import toast from "react-hot-toast";
 import API from "../api/axios";
 
 function ProductDetails() {
@@ -37,23 +38,23 @@ function ProductDetails() {
     }
   };
 
-  const handleAddToCart = async () => {
-    try {
-      const response = await API.post("/cart/add", {
-        productId: product._id,
-        quantity,
-      });
+const handleAddToCart = async () => {
+  try {
+    await API.post("/cart/add", {
+      productId: product._id,
+      quantity,
+    });
 
-      console.log(response.data);
-      alert("Product added to cart");
-    } catch (error) {
-      console.log(error.response?.data || error.message);
-      alert(
-        error.response?.data?.message ||
-        "Failed to add product to cart"
-      );
-    }
-  };
+    toast.success("Product added to cart");
+  } catch (error) {
+    console.log(error.response?.data || error.message);
+
+    toast.error(
+      error.response?.data?.message ||
+      "Failed to add product to cart"
+    );
+  }
+};
 
   if (loading) {
     return (
