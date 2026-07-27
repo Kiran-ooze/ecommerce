@@ -25,7 +25,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173", // Local development
-      "https://shopeasy-tan.vercel.app", // Vercel frontend
+      process.env.FRONTEND_URL, // Vercel frontend
     ],
     credentials: true,
   })
