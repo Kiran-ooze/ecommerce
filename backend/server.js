@@ -20,6 +20,8 @@ connectDB();
 
 const app = express();
 
+console.log("FRONTEND_URL =", process.env.FRONTEND_URL);
+
 // Middleware
 app.use(
   cors({
