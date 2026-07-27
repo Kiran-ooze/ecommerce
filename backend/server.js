@@ -21,7 +21,15 @@ connectDB();
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173", // Local development
+      "https://shopeasy-tan.vercel.app", // Vercel frontend
+    ],
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 // Test API
